@@ -27,11 +27,29 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
+      - name: Install AWS CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y awscli
+
       - name: Retrieve EC2 Instance ID and Connect
         run: |
-          instance_id=$(aws ec2 describe-instances --query "Reservations[*].Instances[*].InstanceId" --filters "Name=tag:Name,Values=MedusaEC2Instance" --output text)
+          instance_id=$(aws ec2 describe-instances \
+            --query "Reservations[*].Instances[*].InstanceId" \
+            --filters "Name=tag:Name,Values=MedusaEC2Instance" \
+            --output text)
+          
           echo "Instance ID: $instance_id"
-          aws ssm start-session --target $instance_id
+          
+          # Check if instance_id is not empty
+          if [ -z "$instance_id" ]; then
+            echo "No instance found with the specified tag"
+            exit 1
+          fi
+
+          # Optionally start a session or perform other actions
+          # Example for starting a session, make sure SSM agent is installed on instance
+          aws ssm start-session --target "$instance_id"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
