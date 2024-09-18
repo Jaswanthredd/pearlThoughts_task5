@@ -37,28 +37,3 @@ jobs:
         run: |
           echo "AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID"
           echo "AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY"
-
-      - name: Retrieve EC2 Instance ID
-        id: retrieve_instance_id
-        run: |
-          set -e
-          echo "Retrieving EC2 instance ID..."
-          instance_id=$(aws ec2 describe-instances \
-            --query "Reservations[*].Instances[*].InstanceId" \
-            --filters "Name=tag:Name,Values=MedusaEC2Instance" \
-            --output text)
-
-          if [ -z "$instance_id" ]; then
-            echo "No instance found with the specified tag"
-            exit 1
-          fi
-
-          echo "Instance ID retrieved successfully: $instance_id"
-          echo "instance_id=$instance_id" >> $GITHUB_ENV
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
-      - name: Use EC2 Instance ID
-        run: |
-          echo "The EC2 Instance ID is: ${{ env.instance_id }}"
