@@ -15,12 +15,32 @@ resource "aws_instance" "medusa_ec2" {
   # User data to set up the instance
   user_data = <<-EOF
                 #!/bin/bash
+                # Update the system
                 apt-get update -y
-                apt-get install -y docker.io
-                systemctl start docker
-                docker run -d -p 80:80 medusa_image:latest
-                EOF
 
+                # Install Node.js
+                curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+                apt-get install -y nodejs
+
+                # Install Yarn
+                npm install --global yarn
+
+                # Install Medusa CLI
+                yarn global add @medusajs/medusa-cli
+
+                # Create a directory for Medusa and navigate to it
+                mkdir /home/ubuntu/medusa
+                cd /home/ubuntu/medusa
+
+                # Initialize a new Medusa project
+                medusa new .
+
+                # Install project dependencies
+                yarn install
+
+                # Start the Medusa server
+                yarn start
+                EOF
   tags = {
     Name = "MedusaEC2Instance"
   }
