@@ -1,69 +1,49 @@
 provider "aws" {
-  region = "us-east-1"  # Set your desired AWS region
+  region = "us-east-1"
+}
+
+variable "ec2_private_key" {
+  type      = string
+  sensitive = true
 }
 
 resource "aws_instance" "medusa_ec2" {
-  ami           = "ami-0e86e20dae9224db8"  # Use a valid AMI ID for your region
-  instance_type = "t2.small"  # Choose your instance type
+  ami                    = "ami-0e86e20dae9224db8" #ami id for ubuntu v24.04
+  instance_type          = "t2.small" #instance_type small to procees tand avoid the timeout
+  key_name               = "Jashu"
+  vpc_security_group_ids = ["sg-0da7a1cd89d513cb5"]
 
-  # If using a key pair for SSH (not used here but may be necessary if you decide to use SSH)
-  # key_name = "your-key-name"
-
-  # Configure security group inline
-  vpc_security_group_ids = [aws_security_group.medusa_sg.id]
-
-  # User data to set up the instance
-  user_data = <<-EOF
-                #!/bin/bash
-                # Update the system
-                apt-get update -y
-
-                # Install Node.js
-                curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-                apt-get install -y nodejs
-
-                # Install Yarn
-                npm install --global yarn
-
-                # Install Medusa CLI
-                yarn global add @medusajs/medusa-cli
-
-                # Create a directory for Medusa and navigate to it
-                mkdir /home/ubuntu/medusa
-                cd /home/ubuntu/medusa
-
-                # Initialize a new Medusa project
-                medusa new .
-
-                # Install project dependencies
-                yarn install
-
-                # Start the Medusa server
-                yarn start
-                EOF
   tags = {
-    Name = "MedusaEC2Instance"
+    Name = "MedusaEC2"
+  }
+
+  provisioner "file" {
+    source      = "install.sh"
+    destination = "/home/ubuntu/install.sh"
+
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = var.ec2_private_key
+      host        = self.public_ip
+    }
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "chmod +x /home/ubuntu/install.sh",
+      "/home/ubuntu/install.sh"
+    ]
+
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = var.ec2_private_key
+      host        = self.public_ip
+    }
   }
 }
 
-resource "aws_security_group" "medusa_sg" {
-  name_prefix = "medusa_sg"
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-output "instance_public_ip" {
+output "ec2_public_ip" {
   value = aws_instance.medusa_ec2.public_ip
 }
