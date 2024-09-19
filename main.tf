@@ -11,7 +11,7 @@ resource "aws_instance" "medusa_ec2" {
   ami                    = "ami-0e86e20dae9224db8" #ami id for ubuntu v24.04
   instance_type          = "t2.small" #instance_type small to procees tand avoid the timeout
   key_name               = "Jashu"
-  vpc_security_group_ids = ["sg-0da7a1cd89d513cb5"]
+  vpc_security_group_ids = ["sg-042fbedde4ab2b439"]
 
   tags = {
     Name = "MedusaEC2"
